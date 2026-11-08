@@ -1029,6 +1029,13 @@ async def test_static_file_invalid_range(
     resp.close()
     resp.release()
 
+    # zero-length suffix is unsatisfiable (RFC 9110 section 14.1.2)
+    resp = await client.get("/", headers={"Range": "bytes=-0"})
+    assert resp.status == 416, "zero suffix length"
+    assert resp.headers["Content-Range"] == f"bytes */{filepath.stat().st_size}"
+    resp.close()
+    resp.release()
+
     await client.close()
 
 

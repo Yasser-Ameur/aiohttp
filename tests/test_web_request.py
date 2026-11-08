@@ -395,6 +395,19 @@ def test_range_to_slice_tail_stop() -> None:
     assert req.http_range.start == -500 and req.http_range.stop is None
 
 
+def test_range_zero_suffix_length() -> None:
+    # https://www.rfc-editor.org/info/rfc9110/#section-14.1.2
+    req = make_mocked_request("GET", "/", headers=CIMultiDict([("RANGE", "bytes=-0")]))
+    with pytest.raises(ValueError, match="suffix length cannot be zero"):
+        req.http_range
+
+
+def test_range_first_byte_only() -> None:
+    # bytes=0-0 is a one byte range, not a zero suffix length
+    req = make_mocked_request("GET", "/", headers=CIMultiDict([("RANGE", "bytes=0-0")]))
+    assert req.http_range.start == 0 and req.http_range.stop == 1
+
+
 def test_range_non_ascii() -> None:
     # ५ = DEVANAGARI DIGIT FIVE
     req = make_mocked_request("GET", "/", headers=CIMultiDict([("RANGE", "bytes=4-५")]))
